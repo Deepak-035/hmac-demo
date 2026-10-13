@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { calculateHMAC } from "./hmacUtils";
 import bgVideo from "./assets/bgvdo.mp4";
 
@@ -62,6 +62,13 @@ export default function App() {
 
   const labRef = useRef<HTMLDivElement>(null);
   const stepsSectionRef = useRef<HTMLDivElement>(null);
+  const logEndRef = useRef<HTMLDivElement>(null);
+  const [consoleOpen, setConsoleOpen] = useState(true);
+
+  // Auto-scroll log container to bottom on new entries
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
 
   const log = (title: string, detail: string, status: LogEntry["status"] = "info") => {
     const timeStr = new Date().toLocaleTimeString();
@@ -492,6 +499,112 @@ export default function App() {
         </div>
       </header>
 
+      {/* Fixed Left Sidebar - Protocol Event Console */}
+      <aside className={`event-console-sidebar${consoleOpen ? " open" : ""}`}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexShrink: 0 }}>
+          <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--neon-cyan)", textTransform: "uppercase", letterSpacing: "1px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
+            Event Console
+            {logs.length > 0 && (
+              <span style={{ fontSize: "10px", background: "rgba(0, 240, 255, 0.15)", color: "var(--neon-cyan)", padding: "2px 7px", borderRadius: "10px", fontWeight: 700, marginLeft: "4px" }}>
+                {logs.length}
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              onClick={clearLogs}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: "var(--text-muted)",
+                fontSize: "11px",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setConsoleOpen(false)}
+              style={{
+                background: "transparent",
+                border: "1px solid rgba(255, 255, 255, 0.15)",
+                color: "var(--text-muted)",
+                fontSize: "12px",
+                cursor: "pointer",
+                borderRadius: "4px",
+                width: "24px",
+                height: "24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+              }}
+              title="Collapse console"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div
+          style={{
+            background: "rgba(3, 7, 18, 0.9)",
+            borderRadius: "10px",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "14px",
+            flex: 1,
+            overflowY: "auto",
+            fontFamily: "var(--mono-font)",
+            fontSize: "11px",
+            minHeight: 0,
+          }}
+        >
+          {logs.length === 0 ? (
+            <div style={{ color: "var(--text-dim)", textAlign: "center", paddingTop: "40px" }}>
+              $ Ready. Select a test case or click &apos;Run Handshake&apos; to monitor events...
+            </div>
+          ) : (
+            logs.map((item, i) => (
+              <div key={i} style={{ marginBottom: "6px", lineHeight: "1.5" }}>
+                <span style={{ color: "#64748b", marginRight: "6px" }}>[{item.timestamp}]</span>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    marginRight: "6px",
+                    color:
+                      item.status === "error"
+                        ? "#ef4444"
+                        : item.status === "success"
+                        ? "#10b981"
+                        : item.status === "warn"
+                        ? "#f59e0b"
+                        : "#00f0ff",
+                  }}
+                >
+                  [{item.title}]
+                </span>
+                <span style={{ color: "#e2e8f0" }}>{item.detail}</span>
+              </div>
+            ))
+          )}
+          <div ref={logEndRef} />
+        </div>
+      </aside>
+
+      {/* Toggle button to reopen console when collapsed */}
+      {!consoleOpen && (
+        <button
+          className="console-toggle-btn"
+          onClick={() => setConsoleOpen(true)}
+          title="Open Protocol Console"
+        >
+          📋
+        </button>
+      )}
+
+      <div className={consoleOpen ? "content-with-sidebar" : ""}>
       {/* 3. Hero Section */}
       <section
         style={{
@@ -1442,8 +1555,8 @@ export default function App() {
           </div>
         </div>
 
-        {/* 4.4 Cryptography Inspector & Live Cyber Terminal */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "20px" }}>
+        {/* 4.4 Session Cryptography Inspector */}
+        <div>
           {/* Cryptography Artifacts Inspector */}
           <div className="glass-panel" style={{ padding: "20px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
@@ -1605,6 +1718,7 @@ export default function App() {
           Protected with single-use nonce storage and constant-time string digest comparison.
         </div>
       </footer>
+      </div>
     </div>
   );
 }
